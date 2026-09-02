@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Umar Khan Group - Attendance System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.85rem; color: #333; }
+        .sidebar-card { border-radius: 8px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .nav-pills .nav-link { color: #495057; font-weight: 600; font-size: 0.88rem; padding: 6px 14px; }
+        .nav-pills .nav-link.active { background-color: #0d6efd; }
+        .form-control, .form-select { font-size: 0.82rem; padding: 6px 10px; border-radius: 6px; }
+        .btn-sm { font-size: 0.8rem; padding: 4px 10px; }
+        .dash-card { border-radius: 8px; padding: 12px; text-align: center; }
+        .dash-card h6 { font-size: 0.72rem; font-weight: 600; margin: 6px 0 2px 0; }
+        .dash-card h2 { font-size: 1.3rem; font-weight: 700; margin: 0; }
+        .table { font-size: 0.82rem; margin-bottom: 0; }
+        .table th { padding: 6px 10px; font-weight: 600; }
+        .table td { padding: 5px 10px; vertical-align: middle; }
+        .status-select { min-width: 110px; font-size: 0.8rem; padding: 2px 6px; }
+        .monthly-grid th, .monthly-grid td { font-size: 0.72rem; text-align: center; vertical-align: middle; white-space: nowrap; padding: 3px 5px; }
+        .sunday-col { background-color: #ffe6e6 !important; color: #d9534f; font-weight: bold; }
+        .report-table th { background-color: #eaf2f8; color: #1c3b57; font-weight: 600; }
+
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f0f2f5; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-card {
+            background: #ffffff; width: 360px; padding: 35px 30px;
+            border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        .login-card h3 { font-weight: 700; color: #111; margin-bottom: 25px; font-size: 1.6rem; }
+        .login-card label { font-size: 0.72rem; font-weight: 700; color: #495057; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+        .login-card .form-control { border: 1.5px solid #ced4da; padding: 10px 12px; font-size: 0.9rem; }
+        .login-card .form-control:focus { border-color: #28a745; box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15); }
+        .btn-custom-login { background-color: #5046e5; border: none; color: white; font-weight: 600; font-size: 0.9rem; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(80, 70, 229, 0.3); }
+        .btn-custom-login:hover { background-color: #4038ca; color: white; }
+
+        @media print {
+            .navbar, .nav-pills, .action-bar, .btn-action, th:last-child, td:last-child, #searchBox, #loginOverlay { display: none !important; }
+            body { background-color: #fff; }
+            .card { box-shadow: none !important; border: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay">
+    <div class="login-card">
+        <h3>Login</h3>
+        <form onsubmit="checkLogin(event)">
+            <div class="mb-3">
+                <label>EMAIL</label>
+                <input type="email" id="loginEmail" class="form-control" placeholder="E-Mail Address" required>
+            </div>
+            <div class="mb-4">
+                <label>PASSWORD</label>
+                <input type="password" id="loginPassword" class="form-control" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn btn-custom-login w-100">Login</button>
+        </form>
+    </div>
+</div>
+
+<nav class="navbar navbar-dark bg-dark py-2">
+    <div class="container d-flex justify-content-between align-items-center">
+        <a class="navbar-brand fw-bold fs-5 text-warning m-0" href="#">Umar Khan Group of Companies</a>
+        <div class="d-flex align-items-center gap-2">
+            <span id="loggedInUserDisplay" class="text-light small"></span>
+            <button class="btn btn-outline-light btn-sm" onclick="logout()"><i class="bi bi-box-arrow-right me-1"></i> Logout</button>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-3">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills mb-3 bg-white p-2 rounded shadow-sm border" id="mainTabs" role="tablist">
+        <li class="nav-item" id="nav-dashboard">
+            <button class="nav-link active" id="dashboard-tab" data-bs-toggle="pill" data-bs-target="#dashboard-tab-pane" type="button"><i class="bi bi-speedometer2 me-1"></i>Dashboard</button>
+        </li>
+        <li class="nav-item" id="nav-employee">
+            <button class="nav-link" id="employee-tab" data-bs-toggle="pill" data-bs-target="#employee-tab-pane" type="button"><i class="bi bi-people me-1"></i>Employee Entry</button>
+        </li>
+        <li class="nav-item" id="nav-daily">
+            <button class="nav-link" id="daily-tab" data-bs-toggle="pill" data-bs-target="#daily-tab-pane" type="button"><i class="bi bi-calendar-check me-1"></i>Daily Attendance</button>
+        </li>
+        <li class="nav-item" id="nav-monthly">
+            <button class="nav-link" id="monthly-tab" data-bs-toggle="pill" data-bs-target="#monthly-tab-pane" type="button"><i class="bi bi-calendar-month me-1"></i>Monthly Staff View</button>
+        </li>
+        <li class="nav-item" id="nav-reports">
+            <button class="nav-link" id="reports-tab" data-bs-toggle="pill" data-bs-target="#reports-tab-pane" type="button"><i class="bi bi-file-earmark-excel me-1"></i>Reports</button>
+        </li>
+        <li class="nav-item" id="nav-settings">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="pill" data-bs-target="#settings-tab-pane" type="button"><i class="bi bi-gear me-1"></i>Backup & Settings</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="mainTabsContent">
+        
+        <!-- DASHBOARD -->
+        <div class="tab-pane fade show active" id="dashboard-tab-pane" role="tabpanel">
+            <div class="row g-2 mb-3">
+                <div class="col-md-2">
+                    <div class="dash-card sidebar-card bg-primary text-white">
+                        <i class="bi bi-people-fill fs-4"></i>
+                        <h6>Total Staff</h6>
+                        <h2 id="dashTotal">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="dash-card sidebar-card bg-success text-white">
+                        <i class="bi bi-person-check-fill fs-4"></i>
+                        <h6>Present Today</h6>
+                        <h2 id="dashPresent">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="dash-card sidebar-card bg-warning text-dark">
+                        <i class="bi bi-clock-history fs-4"></i>
+                        <h6>Late Arrivals</h6>
+                        <h2 id="dashLate">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="dash-card sidebar-card bg-info text-white">
+                        <i class="bi bi-airplane-fill fs-4"></i>
+                        <h6>On Leave</h6>
+                        <h2 id="dashLeave">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="dash-card sidebar-card bg-secondary text-white">
+                        <i class="bi bi-star-half fs-4"></i>
+                        <h6>Half Day</h6>
+                        <h2 id="dashHalfDay">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="dash-card sidebar-card bg-danger text-white">
+                        <i class="bi bi-person-x-fill fs-4"></i>
+                        <h6>Absent Today</h6>
+                        <h2 id="dashAbsent">0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card sidebar-card p-3">
+                <h6 class="fw-bold mb-2">Today's Summary</h6>
+                <div id="quickSummary"></div>
+            </div>
+        </div>
+
+        <!-- EMPLOYEE ENTRY -->
+        <div class="tab-pane fade" id="employee-tab-pane" role="tabpanel">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card sidebar-card p-3">
+                        <h6 class="fw-bold text-primary mb-3" id="empFormTitle">Add New Employee</h6>
+                        <form id="empForm">
+                            <input type="hidden" id="editEmpId">
+                            <div class="mb-2">
+                                <label class="form-label small mb-1">Employee Code</label>
+                                <input type="text" id="empCode" class="form-control" placeholder="Auto Generated" readonly required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small mb-1">Full Name</label>
+                                <input type="text" id="empName" class="form-control" placeholder="Name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small mb-1">Designation</label>
+                                <input type="text" id="empDesignation" class="form-control" placeholder="Manager, Developer, Officer" required>
+                            </div>
+                            <button type="submit" id="saveEmpBtn" class="btn btn-primary btn-sm w-100 py-1">Save Employee</button>
+                            <button type="button" id="cancelEditBtn" class="btn btn-secondary btn-sm w-100 mt-2 py-1 d-none" onclick="resetEmpForm()">Cancel Edit</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card sidebar-card p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold m-0">Staff Directory</h6>
+                            <input type="text" id="empSearchInput" class="form-control form-control-sm" style="width: 200px;" placeholder="Search Code/Name..." onkeyup="renderEmpTable()">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Designation</th>
+                                        <th style="width: 120px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="empListTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DAILY ATTENDANCE -->
+        <div class="tab-pane fade" id="daily-tab-pane" role="tabpanel">
+            <div class="card sidebar-card p-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 action-bar">
+                    <div class="d-flex align-items-center gap-2">
+                        <div>
+                            <label class="form-label fw-semibold small m-0 d-block text-secondary">Date</label>
+                            <input type="date" id="attendanceDate" class="form-control form-control-sm" style="width: 140px;">
+                        </div>
+                        <div class="align-self-end">
+                            <button class="btn btn-light border btn-sm text-secondary fw-semibold" onclick="renderDailyTable()">Load Date</button>
+                            <button class="btn btn-light border btn-sm text-secondary fw-semibold" onclick="setYesterday()">Yesterday</button>
+                            <button class="btn btn-info text-white fw-bold btn-sm ms-1" style="background-color: #1a748e; border: none;" onclick="saveAttendanceAlert()">Save Attendance</button>
+                            <button class="btn btn-light border btn-sm text-secondary fw-semibold ms-1" onclick="window.print()">Print</button>
+                        </div>
+                    </div>
+                    <div class="align-self-end">
+                        <input type="text" id="dailySearchInput" class="form-control form-control-sm" style="width: 180px;" placeholder="Search Staff..." onkeyup="renderDailyTable()">
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead style="background-color: #eaf2f8; color: #34495e;">
+                            <tr>
+                                <th style="width: 40px;">#</th>
+                                <th>Employee</th>
+                                <th style="width: 130px;">In Time</th>
+                                <th style="width: 130px;">Out Time</th>
+                                <th style="width: 110px;">Late Arrival</th>
+                                <th style="width: 125px;">Status</th>
+                                <th style="width: 180px;">Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MONTHLY FULL STAFF ATTENDANCE -->
+        <div class="tab-pane fade" id="monthly-tab-pane" role="tabpanel">
+            <div class="card sidebar-card p-3">
+                <h5 class="fw-bold mb-2" style="color: #1c3b57;">Monthly Full Staff Attendance</h5>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3 action-bar">
+                    <div>
+                        <label class="form-label fw-semibold small m-0 d-block text-secondary">Month</label>
+                        <input type="month" id="monthlyPicker" class="form-control form-control-sm" style="width: 160px;">
+                    </div>
+                    <div class="align-self-end">
+                        <button class="btn btn-info text-white fw-bold btn-sm ms-1" style="background-color: #1a748e; border: none;" onclick="renderMonthlyGrid()">View Full Month</button>
+                        <button class="btn btn-light border btn-sm text-secondary fw-semibold ms-1" onclick="window.print()">Print</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle monthly-grid">
+                        <thead style="background-color: #eaf2f8; color: #34495e;">
+                            <tr id="monthlyGridHead"></tr>
+                        </thead>
+                        <tbody id="monthlyGridBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- REPORTS -->
+        <div class="tab-pane fade" id="reports-tab-pane" role="tabpanel">
+            <div class="card sidebar-card p-3">
+                <h5 class="fw-bold mb-2" style="color: #1c3b57;">Monthly Report</h5>
+                <div class="d-flex flex-wrap align-items-end gap-2 mb-3 action-bar">
+                    <div>
+                        <label class="form-label fw-semibold small m-0 text-secondary">Month</label>
+                        <input type="month" id="reportMonthPicker" class="form-control form-control-sm" style="width: 150px;">
+                    </div>
+                    <div>
+                        <label class="form-label fw-semibold small m-0 text-secondary">Report Type</label>
+                        <select id="reportTypeSelect" class="form-select form-select-sm" style="width: 160px;">
+                            <option value="Full Report">Full Report</option>
+                            <option value="Present Only">Present Only</option>
+                            <option value="Absent Only">Absent Only</option>
+                            <option value="On Leave Only">On Leave Only</option>
+                            <option value="Absent + On Leave">Absent + On Leave</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-info text-white fw-bold btn-sm" style="background-color: #1a748e; border: none;" onclick="generateMonthlyReport()">Generate Report</button>
+                        <button class="btn btn-light border btn-sm text-secondary fw-semibold" onclick="exportToCSV()">Export CSV</button>
+                        <button class="btn btn-light border btn-sm text-secondary fw-semibold" onclick="window.print()">Print Report</button>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold mb-2 text-dark" id="reportTitleHeader">Full Report</h6>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle report-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">ID</th>
+                                <th>Name</th>
+                                <th style="width: 90px; text-align: center;">Present</th>
+                                <th style="width: 90px; text-align: center;">Late</th>
+                                <th style="width: 90px; text-align: center;">Absent</th>
+                                <th style="width: 90px; text-align: center;">On Leave</th>
+                                <th style="width: 90px; text-align: center;">Half Day</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- BACKUP & SETTINGS -->
+        <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel">
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <div class="card sidebar-card p-3 mb-3">
+                        <h5 class="fw-bold mb-2" style="color: #1c3b57;"><i class="bi bi-people-fill me-1"></i> User Roles & Custom Permissions Manager</h5>
+                        <p class="text-secondary small mb-3">Yahan se aap naye Assistant ya Staff ke liye Login Email, Password aur unke Permissions (Access) set kar sakte hain.</p>
+                        
+                        <form onsubmit="saveNewUser(event)" class="row g-2 align-items-end border-bottom pb-3 mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">User Email</label>
+                                <input type="email" id="newUserEmail" class="form-control" placeholder="assistant@gmail.com" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">Password</label>
+                                <input type="password" id="newUserPass" class="form-control" placeholder="Password" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold d-block">Select Access (Permissions):</label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div class="form-check"><input class="form-check-input perm-chk" type="checkbox" value="dashboard" id="p_dash" checked><label class="form-check-label small" for="p_dash">Dashboard</label></div>
+                                    <div class="form-check"><input class="form-check-input perm-chk" type="checkbox" value="employee" id="p_emp" checked><label class="form-check-label small" for="p_emp">Employee Entry</label></div>
+                                    <div class="form-check"><input class="form-check-input perm-chk" type="checkbox" value="daily" id="p_daily" checked><label class="form-check-label small" for="p_daily">Daily Attendance</label></div>
+                                    <div class="form-check"><input class="form-check-input perm-chk" type="checkbox" value="monthly" id="p_monthly" checked><label class="form-check-label small" for="p_monthly">Monthly View</label></div>
+                                    <div class="form-check"><input class="form-check-input perm-chk" type="checkbox" value="reports" id="p_rep" checked><label class="form-check-label small" for="p_rep">Reports</label></div>
+                                    <div class="form-check"><input class="form-check-input perm-chk" type="checkbox" value="settings" id="p_set" checked><label class="form-check-label small" for="p_set">Settings/Backup</label></div>
+                                </div>
+                            </div>
+                            <div class="col-md-12 mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm fw-bold px-3">Add / Create User Account</button>
+                            </div>
+                        </form>
+
+                        <h6 class="fw-bold small text-secondary">Existing Users List</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Allowed Permissions</th>
+                                        <th style="width: 90px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersListTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card sidebar-card p-3">
+                        <h5 class="fw-bold mb-2" style="color: #1c3b57;"><i class="bi bi-shield-lock me-1"></i> Master Admin Account</h5>
+                        <form onsubmit="updateCredentials(event)">
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Admin Email</label>
+                                <input type="email" id="settingEmail" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">New Password</label>
+                                <input type="password" id="settingPassword" class="form-control" placeholder="Enter new password" required>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm fw-bold px-3 py-1">Update Master Admin</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card sidebar-card p-3">
+                        <h5 class="fw-bold mb-2" style="color: #1c3b57;"><i class="bi bi-database me-1"></i> Backup & Data Management</h5>
+                        <p class="text-secondary small mb-3">Apne data ko safe rakhne ke liye backup file download karein.</p>
+                        
+                        <div class="d-flex flex-column gap-2">
+                            <button class="btn btn-primary btn-sm fw-bold py-2" onclick="downloadBackup()">
+                                <i class="bi bi-download me-1"></i> Download Backup File
+                            </button>
+                            
+                            <button class="btn btn-outline-secondary btn-sm fw-bold py-2" onclick="document.getElementById('restoreFileInput').click()">
+                                <i class="bi bi-upload me-1"></i> Restore Backup File
+                            </button>
+                            <input type="file" id="restoreFileInput" accept=".json" style="display: none;" onchange="restoreBackup(event)">
+
+                            <button class="btn btn-danger btn-sm fw-bold py-2 mt-2" onclick="deleteAllData()">
+                                <i class="bi bi-trash me-1"></i> Delete All Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let employees = JSON.parse(localStorage.getItem('uk_employees')) || [];
+    let attendance = JSON.parse(localStorage.getItem('uk_attendance')) || {};
+    let adminCreds = JSON.parse(localStorage.getItem('uk_admin_creds')) || { email: 'admin@gmail.com', pass: 'admin' };
+    let subUsers = JSON.parse(localStorage.getItem('uk_sub_users')) || [];
+
+    document.getElementById('settingEmail').value = adminCreds.email;
+
+    let currentSessionUser = JSON.parse(sessionStorage.getItem('uk_current_session')) || null;
+
+    function checkLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim();
+        const pass = document.getElementById('loginPassword').value.trim();
+
+        if (email === adminCreds.email && pass === adminCreds.pass) {
+            const adminSession = { email: email, role: 'admin', permissions: ['dashboard', 'employee', 'daily', 'monthly', 'reports', 'settings'] };
+            sessionStorage.setItem('uk_current_session', JSON.stringify(adminSession));
+            document.getElementById('loginOverlay').style.display = 'none';
+            applyUserPermissions(adminSession);
+            refreshAll();
+        } else {
+            const foundUser = subUsers.find(u => u.email === email && u.pass === pass);
+            if (foundUser) {
+                const userSession = { email: foundUser.email, role: 'sub', permissions: foundUser.permissions };
+                sessionStorage.setItem('uk_current_session', JSON.stringify(userSession));
+                document.getElementById('loginOverlay').style.display = 'none';
+                applyUserPermissions(userSession);
+                refreshAll();
+            } else {
+                alert("Invalid Email or Password!");
+            }
+        }
+    }
+
+    function logout() {
+        sessionStorage.removeItem('uk_current_session');
+        location.reload();
+    }
+
+    if (currentSessionUser) {
+        document.getElementById('loginOverlay').style.display = 'none';
+        applyUserPermissions(currentSessionUser);
+    }
+
+    function applyUserPermissions(session) {
+        document.getElementById('loggedInUserDisplay').innerHTML = `Logged in: <strong>${session.email}</strong>`;
+
+        const tabsMap = {
+            'dashboard': 'nav-dashboard',
+            'employee': 'nav-employee',
+            'daily': 'nav-daily',
+            'monthly': 'nav-monthly',
+            'reports': 'nav-reports',
+            'settings': 'nav-settings'
+        };
+
+        Object.keys(tabsMap).forEach(perm => {
+            const navElem = document.getElementById(tabsMap[perm]);
+            if (session.permissions.includes(perm)) {
+                if(navElem) navElem.style.display = 'block';
+            } else {
+                if(navElem) navElem.style.display = 'none';
+            }
+        });
+
+        const activeTab = document.querySelector('.nav-pills .nav-link.active');
+        if (!activeTab || activeTab.parentElement.style.display === 'none') {
+            const firstAvailable = session.permissions[0];
+            if (firstAvailable && tabsMap[firstAvailable]) {
+                const targetBtnId = tabsMap[firstAvailable].replace('nav-', '') + '-tab';
+                const btn = document.getElementById(targetBtnId);
+                if(btn) new bootstrap.Tab(btn).show();
+            }
+        }
+    }
+
+    function saveNewUser(e) {
+        e.preventDefault();
+        const email = document.getElementById('newUserEmail').value.trim();
+        const pass = document.getElementById('newUserPass').value.trim();
+        const checkboxes = document.querySelectorAll('.perm-chk:checked');
+        let permissions = [];
+        checkboxes.forEach(chk => permissions.push(chk.value));
+
+        if(subUsers.some(u => u.email === email)) {
+            alert("This email already exists as a sub-user!");
+            return;
+        }
+
+        subUsers.push({ email, pass, permissions });
+        localStorage.setItem('uk_sub_users', JSON.stringify(subUsers));
+        alert("Sub-user created successfully!");
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPass').value = '';
+        renderUsersList();
+    }
+
+    function deleteSubUser(email) {
+        if(confirm(`Are you sure you want to delete user ${email}?`)) {
+            subUsers = subUsers.filter(u => u.email !== email);
+            localStorage.setItem('uk_sub_users', JSON.stringify(subUsers));
+            renderUsersList();
+        }
+    }
+
+    function renderUsersList() {
+        const tbody = document.getElementById('usersListTable');
+        if(!tbody) return;
+        tbody.innerHTML = '';
+        subUsers.forEach(u => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${u.email}</strong></td>
+                    <td><span class="text-muted small">${u.permissions.join(', ')}</span></td>
+                    <td><button class="btn btn-outline-danger btn-sm py-0 px-2" onclick="deleteSubUser('${u.email}')">Delete</button></td>
+                </tr>
+            `;
+        });
+    }
+    renderUsersList();
+
+    function updateCredentials(e) {
+        e.preventDefault();
+        const newEmail = document.getElementById('settingEmail').value.trim();
+        const newPass = document.getElementById('settingPassword').value.trim();
+
+        adminCreds = { email: newEmail, pass: newPass };
+        localStorage.setItem('uk_admin_creds', JSON.stringify(adminCreds));
+        alert("Master Admin Credentials updated successfully!");
+    }
+
+    function getLocalDateString(d = new Date()) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    const todayDateStr = getLocalDateString();
+    document.getElementById('attendanceDate').value = todayDateStr;
+    document.getElementById('monthlyPicker').value = todayDateStr.substring(0, 7);
+    document.getElementById('reportMonthPicker').value = todayDateStr.substring(0, 7);
+
+    function generateNextEmpCode() {
+        if (employees.length === 0) {
+            document.getElementById('empCode').value = 'UK-101';
+        } else {
+            let lastEmp = employees[employees.length - 1];
+            let lastCode = lastEmp.code;
+            let numericPart = parseInt(lastCode.replace(/\D/g, '')) || 100;
+            let nextNum = numericPart + 1;
+            document.getElementById('empCode').value = `UK-${nextNum}`;
+        }
+    }
+
+    document.getElementById('empForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const editId = document.getElementById('editEmpId').value;
+        const code = document.getElementById('empCode').value.trim();
+        const name = document.getElementById('empName').value.trim();
+        const designation = document.getElementById('empDesignation').value.trim();
+
+        if (editId) {
+            const index = employees.findIndex(e => e.code === editId);
+            if (index !== -1) employees[index] = { code, name, designation };
+        } else {
+            if (employees.some(e => e.code === code)) {
+                alert("Employee Code already exists!");
+                return;
+            }
+            employees.push({ code, name, designation });
+        }
+
+        saveToLocalStorage();
+        resetEmpForm();
+        refreshAll();
+    });
+
+    function editEmployee(code) {
+        const emp = employees.find(e => e.code === code);
+        if (emp) {
+            document.getElementById('editEmpId').value = emp.code;
+            document.getElementById('empCode').value = emp.code;
+            document.getElementById('empName').value = emp.name;
+            document.getElementById('empDesignation').value = emp.designation || '';
+
+            document.getElementById('empFormTitle').innerText = "Edit Employee";
+            document.getElementById('saveEmpBtn').innerText = "Update Employee";
+            document.getElementById('cancelEditBtn').classList.remove('d-none');
+        }
+    }
+
+    function resetEmpForm() {
+        document.getElementById('editEmpId').value = '';
+        document.getElementById('empForm').reset();
+        document.getElementById('empFormTitle').innerText = "Add New Employee";
+        document.getElementById('saveEmpBtn').innerText = "Save Employee";
+        document.getElementById('cancelEditBtn').classList.add('d-none');
+        generateNextEmpCode();
+    }
+
+    function deleteEmployee(code) {
+        if(confirm("Are you sure you want to delete this employee?")) {
+            employees = employees.filter(e => e.code !== code);
+            saveToLocalStorage();
+            refreshAll();
+            generateNextEmpCode();
+        }
+    }
+
+    function saveToLocalStorage() {
+        localStorage.setItem('uk_employees', JSON.stringify(employees));
+        localStorage.setItem('uk_attendance', JSON.stringify(attendance));
+    }
+
+    function handleTimeInput(code, field, value) {
+        const selDate = document.getElementById('attendanceDate').value;
+        if (!attendance[selDate]) attendance[selDate] = {};
+        if (!attendance[selDate][code]) {
+            attendance[selDate][code] = { checkIn: '', checkOut: '', status: 'Present', remarks: '' };
+        }
+
+        attendance[selDate][code][field] = value;
+
+        if (field === 'checkIn' && value && (attendance[selDate][code].status !== 'On Leave' && attendance[selDate][code].status !== 'Half Day')) {
+            attendance[selDate][code].status = 'Present';
+        }
+
+        saveToLocalStorage();
+        refreshAll();
+    }
+
+    function handleRemarksInput(code, value) {
+        const selDate = document.getElementById('attendanceDate').value;
+        if (!attendance[selDate]) attendance[selDate] = {};
+        if (!attendance[selDate][code]) {
+            attendance[selDate][code] = { checkIn: '', checkOut: '', status: 'Absent', remarks: '' };
+        }
+
+        attendance[selDate][code].remarks = value;
+        saveToLocalStorage();
+    }
+
+    function updateDropdownStatus(code, statusValue) {
+        const selDate = document.getElementById('attendanceDate').value;
+        if (!attendance[selDate]) attendance[selDate] = {};
+        if (!attendance[selDate][code]) {
+            attendance[selDate][code] = { checkIn: '', checkOut: '', status: 'Absent', remarks: '' };
+        }
+
+        attendance[selDate][code].status = statusValue;
+
+        if (statusValue === 'Absent' || statusValue === 'On Leave') {
+            attendance[selDate][code].checkIn = '';
+            attendance[selDate][code].checkOut = '';
+        } else if (statusValue === 'Present' && !attendance[selDate][code].checkIn) {
+            attendance[selDate][code].checkIn = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
+        saveToLocalStorage();
+        refreshAll();
+    }
+
+    function setYesterday() {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        document.getElementById('attendanceDate').value = getLocalDateString(d);
+        renderDailyTable();
+    }
+
+    function saveAttendanceAlert() {
+        alert("Attendance records saved successfully!");
+    }
+
+    function formatTime12(timeStr) {
+        if (!timeStr) return '';
+        const [h, m] = timeStr.split(':');
+        let hour = parseInt(h, 10);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        hour = hour % 12 || 12;
+        return `${hour}:${m} ${ampm}`;
+    }
+
+    function refreshAll() {
+        renderEmpTable();
+        renderDailyTable();
+        renderDashboard();
+        renderMonthlyGrid();
+        generateMonthlyReport();
+    }
+
+    function renderEmpTable() {
+        const tbody = document.getElementById('empListTable');
+        const filter = (document.getElementById('empSearchInput')?.value || '').toLowerCase();
+        tbody.innerHTML = '';
+        
+        employees.filter(e => e.name.toLowerCase().includes(filter) || e.code.toLowerCase().includes(filter) || (e.designation && e.designation.toLowerCase().includes(filter)))
+        .forEach(e => {
+            const desig = e.designation || '';
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${e.code}</strong></td>
+                    <td>${e.name}</td>
+                    <td>${desig}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary py-0 px-2 me-1" onclick="editEmployee('${e.code}')"><i class="bi bi-pencil"></i> Edit</button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteEmployee('${e.code}')"><i class="bi bi-trash"></i> Delete</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderDailyTable() {
+        const selDate = document.getElementById('attendanceDate').value;
+        const tbody = document.getElementById('dailyTable');
+        const filter = (document.getElementById('dailySearchInput')?.value || '').toLowerCase();
+        tbody.innerHTML = '';
+
+        const dayRecords = attendance[selDate] || {};
+        const filteredEmps = employees.filter(e => e.name.toLowerCase().includes(filter) || e.code.toLowerCase().includes(filter));
+
+        filteredEmps.forEach((e, idx) => {
+            const rec = dayRecords[e.code] || { checkIn: '', checkOut: '', status: 'Absent', remarks: '' };
+            
+            let lateDisplay = '<span class="text-secondary small">On Time</span>';
+            if (rec.status === 'Present' && rec.checkIn && rec.checkIn > "10:30") {
+                lateDisplay = '<span class="text-danger fw-semibold small">Late</span>';
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="text-secondary fw-semibold">${idx + 1}</td>
+                    <td>
+                        <div class="fw-semibold text-dark">${e.name}</div>
+                        <div class="text-muted small">${e.code}</div>
+                    </td>
+                    <td>
+                        <input type="time" class="form-control form-control-sm" value="${rec.checkIn || ''}" onchange="handleTimeInput('${e.code}', 'checkIn', this.value)">
+                    </td>
+                    <td>
+                        <input type="time" class="form-control form-control-sm" value="${rec.checkOut || ''}" onchange="handleTimeInput('${e.code}', 'checkOut', this.value)">
+                    </td>
+                    <td>${lateDisplay}</td>
+                    <td>
+                        <select class="form-select form-select-sm status-select" onchange="updateDropdownStatus('${e.code}', this.value)">
+                            <option value="Present" ${rec.status === 'Present' ? 'selected' : ''}>Present</option>
+                            <option value="Absent" ${rec.status === 'Absent' ? 'selected' : ''}>Absent</option>
+                            <option value="On Leave" ${rec.status === 'On Leave' ? 'selected' : ''}>On Leave</option>
+                            <option value="Half Day" ${rec.status === 'Half Day' ? 'selected' : ''}>Half Day</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" placeholder="Enter remarks..." value="${rec.remarks || ''}" onchange="handleRemarksInput('${e.code}', this.value)">
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderDashboard() {
+        const dayRecords = attendance[todayDateStr] || {};
+        let presentCount = 0, lateCount = 0, leaveCount = 0, halfDayCount = 0, absentCount = 0;
+
+        employees.forEach(e => {
+            const rec = dayRecords[e.code];
+            if (rec) {
+                if (rec.status === 'Present') {
+                    presentCount++;
+                    if (rec.checkIn && rec.checkIn > "10:30") lateCount++;
+                } else if (rec.status === 'On Leave') {
+                    leaveCount++;
+                } else if (rec.status === 'Half Day') {
+                    halfDayCount++;
+                } else {
+                    absentCount++;
+                }
+            } else {
+                absentCount++;
+            }
+        });
+
+        document.getElementById('dashTotal').innerText = employees.length;
+        document.getElementById('dashPresent').innerText = presentCount;
+        document.getElementById('dashLate').innerText = lateCount;
+        document.getElementById('dashLeave').innerText = leaveCount;
+        document.getElementById('dashHalfDay').innerText = halfDayCount;
+        document.getElementById('dashAbsent').innerText = absentCount;
+
+        document.getElementById('quickSummary').innerHTML = `
+            <p class="m-0 small">
+                Total Staff: <strong>${employees.length}</strong> | 
+                Total Present: <span class="text-success fw-bold">${presentCount}</span> (including <span class="text-warning fw-bold">${lateCount} Late</span>) | 
+                On Leave: <span class="text-info fw-bold">${leaveCount}</span> | 
+                Half Day: <span class="text-secondary fw-bold">${halfDayCount}</span> | 
+                Absent: <span class="text-danger fw-bold">${absentCount}</span>
+            </p>
+        `;
+    }
+
+    function renderMonthlyGrid() {
+        const monthVal = document.getElementById('monthlyPicker').value;
+        if (!monthVal) return;
+
+        const [year, month] = monthVal.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        const thead = document.getElementById('monthlyGridHead');
+        const tbody = document.getElementById('monthlyGridBody');
+
+        let headHTML = `<th style="width: 30px;">ID</th><th style="min-width: 120px; text-align: left;">Employee</th>`;
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayDate = new Date(year, month - 1, day);
+            const isSunday = dayDate.getDay() === 0;
+            const sundayClass = isSunday ? 'sunday-col' : '';
+            headHTML += `<th style="min-width: 55px;" class="${sundayClass}">${day}<br><span class="fw-normal" style="font-size:0.65rem;">${isSunday ? 'Sun' : 'In/Out'}</span></th>`;
+        }
+        thead.innerHTML = headHTML;
+
+        tbody.innerHTML = '';
+        employees.forEach((emp, idx) => {
+            let rowHTML = `
+                <tr>
+                    <td class="fw-bold text-secondary">${idx + 1}</td>
+                    <td class="fw-semibold text-start text-dark">${emp.name}<br><span class="text-muted fw-normal" style="font-size:0.7rem;">${emp.code}</span></td>
+            `;
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayPadded = String(day).padStart(2, '0');
+                const dateKey = `${monthVal}-${dayPadded}`;
+                const dayDate = new Date(year, month - 1, day);
+                const isSunday = dayDate.getDay() === 0;
+                const sundayClass = isSunday ? 'sunday-col' : '';
+                const rec = (attendance[dateKey] && attendance[dateKey][emp.code]) ? attendance[dateKey][emp.code] : null;
+
+                if (rec && (rec.checkIn || rec.checkOut)) {
+                    const inTime = formatTime12(rec.checkIn);
+                    const outTime = formatTime12(rec.checkOut);
+                    const badgeBg = rec.status === 'Present' ? 'bg-success' : (rec.status === 'On Leave' ? 'bg-info' : (rec.status === 'Half Day' ? 'bg-warning text-dark' : 'bg-danger'));
+                    rowHTML += `
+                        <td class="${sundayClass}">
+                            <div class="fw-bold text-dark" style="font-size:0.68rem;">${inTime || '--'}</div>
+                            <div class="text-muted" style="font-size:0.68rem;">${outTime || '--'}</div>
+                            <div class="badge ${badgeBg}" style="font-size:0.6rem;">${rec.status[0]}</div>
+                        </td>
+                    `;
+                } else if (rec && rec.status === 'On Leave') {
+                    rowHTML += `<td class="${sundayClass}"><span class="badge bg-info" style="font-size:0.65rem;">Leave</span></td>`;
+                } else if (rec && rec.status === 'Half Day') {
+                    rowHTML += `<td class="${sundayClass}"><span class="badge bg-warning text-dark" style="font-size:0.65rem;">Half</span></td>`;
+                } else if (rec && rec.status === 'Absent') {
+                    rowHTML += `<td class="${sundayClass}"><span class="badge bg-danger" style="font-size:0.65rem;">Absent</span></td>`;
+                } else {
+                    rowHTML += `<td class="${sundayClass} text-muted">${isSunday ? 'OFF' : '--'}</td>`;
+                }
+            }
+
+            rowHTML += `</tr>`;
+            tbody.innerHTML += rowHTML;
+        });
+    }
+
+    function generateMonthlyReport() {
+        const monthVal = document.getElementById('reportMonthPicker').value;
+        const typeVal = document.getElementById('reportTypeSelect').value;
+        if (!monthVal) return;
+
+        document.getElementById('reportTitleHeader').innerText = `${monthVal} — ${typeVal}`;
+
+        const [year, month] = monthVal.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const tbody = document.getElementById('reportTableBody');
+        tbody.innerHTML = '';
+
+        employees.forEach((emp, idx) => {
+            let pCount = 0, lCount = 0, aCount = 0, leaveCount = 0, halfCount = 0;
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayPadded = String(day).padStart(2, '0');
+                const dateKey = `${monthVal}-${dayPadded}`;
+                const rec = (attendance[dateKey] && attendance[dateKey][emp.code]) ? attendance[dateKey][emp.code] : null;
+
+                if (rec) {
+                    if (rec.status === 'Present') {
+                        pCount++;
+                        if (rec.checkIn && rec.checkIn > "10:30") lCount++;
+                    } else if (rec.status === 'On Leave') {
+                        leaveCount++;
+                    } else if (rec.status === 'Half Day') {
+                        halfCount++;
+                    } else if (rec.status === 'Absent') {
+                        aCount++;
+                    }
+                }
+            }
+
+            // STRICT FILTER LOGIC: Sirf wahi row add hogi jo selected criteria se match kare gi
+            let shouldShow = true;
+            if (typeVal === 'Present Only' && pCount === 0) shouldShow = false;
+            if (typeVal === 'Absent Only' && aCount === 0) shouldShow = false;
+            if (typeVal === 'On Leave Only' && leaveCount === 0) shouldShow = false;
+            if (typeVal === 'Absent + On Leave' && (aCount === 0 && leaveCount === 0)) shouldShow = false;
+
+            if (shouldShow) {
+                // Agar user ne specific filter lagaya hai, toh report table mein sirf wahi counts show honge jo filter select hai
+                let displayP = (typeVal === 'Full Report' || typeVal === 'Present Only') ? pCount : '-';
+                let displayL = (typeVal === 'Full Report') ? lCount : '-';
+                let displayA = (typeVal === 'Full Report' || typeVal === 'Absent Only' || typeVal === 'Absent + On Leave') ? aCount : '-';
+                let displayLeave = (typeVal === 'Full Report' || typeVal === 'On Leave Only' || typeVal === 'Absent + On Leave') ? leaveCount : '-';
+                let displayHalf = (typeVal === 'Full Report') ? halfCount : '-';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="text-secondary fw-semibold">${idx + 1}</td>
+                        <td class="fw-medium text-dark">${emp.name}</td>
+                        <td class="text-center">${displayP}</td>
+                        <td class="text-center">${displayL}</td>
+                        <td class="text-center">${displayA}</td>
+                        <td class="text-center">${displayLeave}</td>
+                        <td class="text-center">${displayHalf}</td>
+                    </tr>
+                `;
+            }
+        });
+
+        if (tbody.innerHTML === '') {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-3">No records found for this filter in ${monthVal}.</td></tr>`;
+        }
+    }
+
+    function exportToCSV() {
+        let csv = "Date,Employee Code,Name,Designation,In Time,Out Time,Late Status,Status,Remarks\n";
+        
+        Object.keys(attendance).forEach(date => {
+            employees.forEach(emp => {
+                const rec = attendance[date][emp.code] || { checkIn: '', checkOut: '', status: 'Absent', remarks: '' };
+                let lateStatus = (rec.status === 'Present' && rec.checkIn && rec.checkIn > "10:30") ? "Late" : "On Time";
+                const desig = emp.designation || '';
+                csv += `"${date}","${emp.code}","${emp.name}","${desig}","${rec.checkIn || '--:--'}","${rec.checkOut || '--:--'}","${lateStatus}","${rec.status}","${rec.remarks || ''}"\n`;
+            });
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', `UK_Attendance_Report.csv`);
+        a.click();
+    }
+
+    function downloadBackup() {
+        const backupData = {
+            employees: employees,
+            attendance: attendance,
+            adminCreds: adminCreds,
+            subUsers: subUsers,
+            backupDate: new Date().toISOString()
+        };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `UK_Attendance_Backup_${todayDateStr}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function restoreBackup(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (importedData.employees && importedData.attendance) {
+                    employees = importedData.employees;
+                    attendance = importedData.attendance;
+                    if(importedData.adminCreds) adminCreds = importedData.adminCreds;
+                    if(importedData.subUsers) subUsers = importedData.subUsers;
+                    
+                    saveToLocalStorage();
+                    localStorage.setItem('uk_admin_creds', JSON.stringify(adminCreds));
+                    localStorage.setItem('uk_sub_users', JSON.stringify(subUsers));
+                    refreshAll();
+                    renderUsersList();
+                    generateNextEmpCode();
+                    alert("Backup restored successfully!");
+                } else {
+                    alert("Invalid backup file structure!");
+                }
+            } catch (err) {
+                alert("Error reading backup file!");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function deleteAllData() {
+        if (confirm("Are you sure you want to delete ALL data? This action cannot be undone!")) {
+            localStorage.removeItem('uk_employees');
+            localStorage.removeItem('uk_attendance');
+            localStorage.removeItem('uk_sub_users');
+            employees = [];
+            attendance = {};
+            subUsers = [];
+            refreshAll();
+            renderUsersList();
+            generateNextEmpCode();
+            alert("All data deleted successfully.");
+        }
+    }
+
+    document.getElementById('attendanceDate').addEventListener('change', renderDailyTable);
+
+    refreshAll();
+    generateNextEmpCode();
+</script>
+</body>
+</html>
